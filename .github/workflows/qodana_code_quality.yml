@@ -5,11 +5,7 @@
 
 name: "Qodana 🔍"
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-      - contiune-with-setun-add-simple-test
 
 jobs:
   qodana:
