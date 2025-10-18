@@ -22,11 +22,18 @@ jobs:
         run: chmod +x ./gradlew
       - name: Run tests
         run: ./gradlew test
-      - name: Install Allure CLI
+      - name: Cache Allure CLI
+        uses: actions/cache@v4
+        with:
+          path: allure-2.27.0
+          key: allure-2.27.0-${{ runner.os }}
+      - name: Download Allure CLI
+        if: steps.cache-allure-cli.outputs.cache-hit != 'true'
         run: |
-          sudo apt-add-repository ppa:qameta/allure -y
-          sudo apt-get update
-          sudo apt-get install allure -y
+          wget https://github.com/allure-framework/allure2/releases/latest/download/allure-2.27.0.tgz
+          tar -xzf allure-2.27.0.tgz
+      - name: Add Allure CLI to PATH
+        run: echo "$(pwd)/allure-2.27.0/bin" >> $GITHUB_PATH
       - name: Generate Allure Report
         run: |
           allure generate build/allure-results --clean -o build/allure-report
