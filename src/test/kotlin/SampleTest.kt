@@ -1,5 +1,5 @@
-import org.junit.Test
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Assertions.assertEquals
 
 class SampleTest {
     @Test
@@ -7,4 +7,3 @@ class SampleTest {
         assertEquals(2, 1 + 1)
     }
 }
-
