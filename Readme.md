@@ -5,14 +5,6 @@ A minimal, clean Kotlin project setup for automated testing with Gradle and GitH
 
 ---
 
-## Table of Contents
-- [Requirements](#requirements)
-- [Project Structure](#project-structure)
-- [How to Run Tests](#how-to-run-tests)
-- [Notes](#notes)
-
----
-
 ## Requirements
 - JDK 21 or newer
 - Gradle (wrapper included, no manual install needed)
