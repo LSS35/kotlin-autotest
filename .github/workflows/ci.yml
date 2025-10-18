@@ -22,7 +22,14 @@ jobs:
         run: chmod +x ./gradlew
       - name: Run tests
         run: ./gradlew test
+      - name: Cache Allure CLI
+        id: cache-allure-cli
+        uses: actions/cache@v4
+        with:
+          path: allure-2.27.0
+          key: allure-2.27.0-${{ runner.os }}
       - name: Download Allure CLI
+        if: steps.cache-allure-cli.outputs.cache-hit != 'true'
         run: |
           wget https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
           tar -xzf allure-2.27.0.tgz
