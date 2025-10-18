@@ -22,9 +22,9 @@ jobs:
         run: chmod +x ./gradlew
       - name: Run tests
         run: ./gradlew test
-      - name: Generate and Publish Allure Report
-        uses: simple-setup/allure-report-action@v1
+      - name: Publish Allure Report to GitHub Pages
+        uses: allure-actions/allure-report@v2
         with:
-          results-dir: build/allure-results
-          report-dir: build/allure-report
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          allure_results: build/allure-results
+          allure_report: build/allure-report
+          github_token: ${{ secrets.GITHUB_TOKEN }}
