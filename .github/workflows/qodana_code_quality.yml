@@ -3,7 +3,7 @@
 #             https://www.jetbrains.com/help/qodana/about-qodana.html           #
 #-------------------------------------------------------------------------------#
 
-name: "Qodana 🔍"
+name: "🔍 Qodana"
 on:
   push:
 
