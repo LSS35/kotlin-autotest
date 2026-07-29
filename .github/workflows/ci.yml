@@ -3,8 +3,6 @@ name: "🚀 CI & 🦄 Allure Report"
 on:
   push:
     branches: ['*']
-  pull_request:
-    branches: ['*']
   workflow_dispatch:
 
 permissions:
@@ -19,12 +17,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      branch_name: ${{ steps.branch.outputs.name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -55,65 +50,28 @@ jobs:
         with:
           path: allure-2.27.0
           key: allure-2.27.0-${{ runner.os }}
-
       - name: Download Allure CLI
         if: steps.cache-allure-cli.outputs.cache-hit != 'true'
         run: |
           wget https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
           tar -xzf allure-2.27.0.tgz
-
       - name: Add Allure CLI to PATH
         run: echo "$(pwd)/allure-2.27.0/bin" >> $GITHUB_PATH
-
-      # 4. Generate Allure HTML Report
       - name: Generate Allure Report
         run: |
           allure generate build/allure-results --clean -o build/allure-report
-
-      # 5. Sanitize branch name for URL usage (supports push and pull_request events)
-      - name: Sanitize branch name
-        id: branch
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            REF_NAME="${{ github.head_ref }}"
-          else
-            REF_NAME="${{ github.ref_name }}"
-          fi
-          echo "name=$(echo ${REF_NAME} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
-
-      # 6. Store generated report as artifact to pass it to the deploy job
-      - name: Upload Allure report artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: allure-report
           path: build/allure-report
-          retention-days: 1
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # Receives the pre-computed branch name output from the build job
     environment:
-      name: Allure Reports
-      url: https://lss35.github.io/kotlin-autotest/${{ needs.build.outputs.branch_name }}/
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # 1. Download generated Allure HTML report from the build job
-      - name: Download Allure report artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: allure-report
-          path: ./build/allure-report
-
-      # 2. Deploy Allure report into branch-specific subdirectory on GitHub Pages
-      - name: Deploy Allure report to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/allure-report
-          destination_dir: ${{ needs.build.outputs.branch_name }}
-          keep_files: true
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
