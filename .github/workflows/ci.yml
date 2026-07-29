@@ -44,13 +44,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      # 1. Check code formatting with Spotless before running tests
+      # 1. Check code formatting
       - name: Check code formatting
-        run: ./gradlew spotlessCheck
+        run: ./gradlew spotlessCheck --no-daemon
 
-      # 2. Execute unit and API tests
+      # 2. Run unit and API tests
       - name: Run tests
-        run: ./gradlew test
+        run: ./gradlew test --no-daemon
 
       # 3. Allure CLI setup and report generation
       - name: Cache Allure CLI
