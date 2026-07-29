@@ -19,6 +19,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      branch_name: ${{ steps.branch.outputs.name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -68,7 +70,18 @@ jobs:
         run: |
           allure generate build/allure-results --clean -o build/allure-report
 
-      # 5. Store generated report as artifact to pass it to the deploy job
+      # 5. Sanitize branch name for URL usage (supports push and pull_request events)
+      - name: Sanitize branch name
+        id: branch
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            REF_NAME="${{ github.head_ref }}"
+          else
+            REF_NAME="${{ github.ref_name }}"
+          fi
+          echo "name=$(echo ${REF_NAME} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
+
+      # 6. Store generated report as artifact to pass it to the deploy job
       - name: Upload Allure report artifact
         uses: actions/upload-artifact@v4
         with:
@@ -79,10 +92,10 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # Using a custom environment name bypasses default branch restrictions while preserving the URL badge!
+    # Receives the pre-computed branch name output from the build job
     environment:
       name: Allure Reports
-      url: https://lss35.github.io/kotlin-autotest/${{ steps.branch.outputs.name }}/
+      url: https://lss35.github.io/kotlin-autotest/${{ needs.build.outputs.branch_name }}/
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -94,24 +107,13 @@ jobs:
           name: allure-report
           path: ./build/allure-report
 
-      # 2. Sanitize branch name (supports both push and pull_request events)
-      - name: Sanitize branch name
-        id: branch
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            REF_NAME="${{ github.head_ref }}"
-          else
-            REF_NAME="${{ github.ref_name }}"
-          fi
-          echo "name=$(echo ${REF_NAME} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
-
-      # 3. Deploy Allure report into branch-specific subdirectory on GitHub Pages
+      # 2. Deploy Allure report into branch-specific subdirectory on GitHub Pages
       - name: Deploy Allure report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/allure-report
-          destination_dir: ${{ steps.branch.outputs.name }}
+          destination_dir: ${{ needs.build.outputs.branch_name }}
           keep_files: true
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
