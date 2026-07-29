@@ -46,11 +46,11 @@ jobs:
 
       # 1. Check code formatting
       - name: Check code formatting
-        run: ./gradlew spotlessCheck --no-daemon
+        run: ./gradlew spotlessCheck --no-daemon --console=plain
 
       # 2. Run unit and API tests
       - name: Run tests
-        run: ./gradlew test --no-daemon
+        run: ./gradlew test --no-daemon --console=plain
 
       # 3. Allure CLI setup and report generation
       - name: Cache Allure CLI
