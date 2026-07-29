@@ -79,7 +79,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # Displays the clickable Allure report URL under the job card in GitHub Actions UI
     environment:
       name: github-pages
       url: https://lss35.github.io/kotlin-autotest/${{ steps.branch.outputs.name }}/
@@ -94,10 +93,16 @@ jobs:
           name: allure-report
           path: ./build/allure-report
 
-      # 2. Sanitize branch name for URL usage (replaces '/' with '-')
+      # 2. Sanitize branch name (supports both push and pull_request events)
       - name: Sanitize branch name
         id: branch
-        run: echo "name=$(echo ${GITHUB_REF_NAME} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            REF_NAME="${{ github.head_ref }}"
+          else
+            REF_NAME="${{ github.ref_name }}"
+          fi
+          echo "name=$(echo ${REF_NAME} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
 
       # 3. Deploy Allure report into branch-specific subdirectory on GitHub Pages
       - name: Deploy Allure report to GitHub Pages
