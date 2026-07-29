@@ -79,8 +79,9 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # Using a custom environment name bypasses default branch restrictions while preserving the URL badge!
     environment:
-      name: github-pages
+      name: Allure Reports
       url: https://lss35.github.io/kotlin-autotest/${{ steps.branch.outputs.name }}/
     steps:
       - name: Checkout code
