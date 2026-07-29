@@ -1,7 +1,14 @@
-name: CI
+name: "🚀 CI & Allure Report"
 
 on:
   push:
+    branches: ['*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,11 +27,64 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties') }}
+
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: gradle-deps-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-deps-${{ runner.os }}-
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
+      # 1. Check code formatting with Spotless before running tests
       - name: Check code formatting
         run: ./gradlew spotlessCheck
 
+      # 2. Execute unit and API tests
       - name: Run tests
         run: ./gradlew test
+
+      # 3. Allure CLI setup and report generation
+      - name: Cache Allure CLI
+        id: cache-allure-cli
+        uses: actions/cache@v4
+        with:
+          path: allure-2.27.0
+          key: allure-2.27.0-${{ runner.os }}
+
+      - name: Download Allure CLI
+        if: steps.cache-allure-cli.outputs.cache-hit != 'true'
+        run: |
+          wget https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
+          tar -xzf allure-2.27.0.tgz
+
+      - name: Add Allure CLI to PATH
+        run: echo "$(pwd)/allure-2.27.0/bin" >> $GITHUB_PATH
+
+      - name: Generate Allure Report
+        run: |
+          allure generate build/allure-results --clean -o build/allure-report
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/allure-report
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
