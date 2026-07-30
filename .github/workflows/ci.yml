@@ -1,4 +1,4 @@
-name: "🦄 Allure"
+name: "🚀 CI & 🦄 Allure Report"
 
 on:
   push:
@@ -25,22 +25,25 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-      - name: Cache Gradle Wrapper
-        uses: actions/cache@v4
+
+      # Caches Gradle Wrapper & dependencies automatically
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
         with:
-          path: ~/.gradle/wrapper
-          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties') }}
-      - name: Cache Gradle Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.gradle/caches
-          key: gradle-deps-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-deps-${{ runner.os }}-
+          cache-disabled: false
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
+
+      # 1. Verify code formatting rules with Spotless & ktlint
+      - name: Check code formatting
+        run: ./gradlew spotlessCheck --no-daemon --console=plain
+
+      # 2. Execute unit and API tests
       - name: Run tests
-        run: ./gradlew test
+        run: ./gradlew test --no-daemon --console=plain
+
+      # 3. Cache Allure CLI binary to speed up workflow execution
       - name: Cache Allure CLI
         id: cache-allure-cli
         uses: actions/cache@v4
